@@ -5,6 +5,7 @@
 int N=10000000;
 
 int main() {
+    clock_t a=clock();
     double* arr = (double*)malloc((N+1)*sizeof(double));
     double Sum=0;
 #pragma acc kernels
@@ -13,6 +14,8 @@ int main() {
         Sum+=arr[i];
     }
     printf("%.25f", Sum);
-    clock();
+    clock_t b=clock();
+    double d=(double)(b-a);
+    printf("%.25f", d);
     return 0;
 }
