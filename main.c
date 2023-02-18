@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <math.h>
-
+#include <time.h>
 int N=10000000;
 
 int main() {
@@ -13,5 +13,6 @@ int main() {
         Sum+=arr[i];
     }
     printf("%.25f", Sum);
+    clock();
     return 0;
 }
