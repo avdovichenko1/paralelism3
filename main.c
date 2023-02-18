@@ -18,4 +18,5 @@ int main() {
     double d=(double)(b-a)/CLOCKS_PER_SEC;
     printf("%.25f", d);
     return 0;
+
 }
