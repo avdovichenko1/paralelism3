@@ -13,7 +13,7 @@ int main() {
         arr[i] = sin(2 * M_PI * i / N);
         Sum+=arr[i];
     }
-    printf("%.25f", Sum);
+    printf("%.25f\n", Sum);
     clock_t b=clock();
     double d=(double)(b-a);
     printf("%.25f", d);
