@@ -5,12 +5,12 @@
 int N=10000000;
 
 int main() {
-    float* arr = (float*)malloc((N+1)*sizeof(float));
-    float Sum=0;
+    double* arr = (double*)malloc((N+1)*sizeof(double));
+    double Sum=0;
 
 #pragma acc kernels
     for (int i = 0; i < N; i++) {
-        arr[i] = (float)sin(2 * M_PI * i / N);
+        arr[i] = sin(2 * M_PI * i / N);
     }
 
     clock_t a=clock();
