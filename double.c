@@ -10,14 +10,12 @@ int main() {
     double Sum=0;
     clock_t a=clock();
 #pragma acc kernels
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++)
         arr[i] = sin(2 * M_PI * i / N);
-    }
     clock_t b=clock();
 #pragma acc kernels
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++)
         Sum+=arr[i];
-    }
     printf("%.25f\n", Sum);
 
     double d=(double)(b-a)/CLOCKS_PER_SEC;
