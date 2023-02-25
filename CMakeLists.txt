@@ -3,4 +3,4 @@ project(paralelism C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(paralelism main.c)
+add_executable(paralelism main.c double.c)

@@ -2,15 +2,16 @@
 #include <malloc.h>
 #include <math.h>
 #include <time.h>
+
 int N=10000000;
 
 int main() {
-    float* arr = (float*)malloc((N+1)*sizeof(float));
-    float Sum=0;
+    double* arr = (double*)malloc((N+1)*sizeof(double));
+    double Sum=0;
     clock_t a=clock();
 #pragma acc kernels
     for (int i = 0; i < N; i++) {
-        arr[i] = sinf(2 * M_PI * i / N);
+        arr[i] = sin(2 * M_PI * i / N);
     }
     clock_t b=clock();
 #pragma acc kernels
