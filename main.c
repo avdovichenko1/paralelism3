@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
                 cublasDaxpy(handle, raz * raz, &alpha, arr_pred, 1, arr_new, 1);
                 cublasIdamax(handle, raz * raz, arr_new, 1, &max_id);
             }
-#pragma acc update self(arr_new[id-1:1])
-#pragma acc update self(arr_new[id-1:1])
+#pragma acc update self(arr_new[max_id-1:1])
+#pragma acc update self(arr_new[max_id-1:1])
             error = fabs(arr_new[max_id - 1]);
 #pragma acc host_data use_device(arr_pred, arr_new)
             cublasDcopy(handle, raz * raz, arr_pred, 1, arr_new, 1);
