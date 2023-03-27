@@ -3,26 +3,30 @@
 #include <stdlib.h>
 #include <math.h>
 
+
 int main(int argc, char *argv[]) {
     // Allocate memory for variables
-    int n = atoi(argv[1]);
+    int max_num_iter = atoi(argv[1]); // количество итераций
+    double max_toch = atof(argv[2]); // точность
+    int raz = atoi(argv[3]); // размер сетки
+    
     double *buf;
     cublasHandle_t handle;
     cublasCreate(&handle);
 
     const double alpha = -1;
-    double step1 = 10.0 / (n - 1);
+    double step1 = 10.0 / (raz - 1);
 
-    double* u = (double*)calloc(n*n, sizeof(double));
-    double* up = (double*)calloc(n*n, sizeof(double));
+    double* u = (double*)calloc(raz * raz, sizeof(double));
+    double* up = (double*)calloc(raz * raz, sizeof(double));
     double x1 = 10.0;
     double x2 = 20.0;
     double y1 = 20.0;
     double y2 = 30.0;
     u[0] = up[0] = x1;
-    u[n] = up[n] = x2;
-    u[n * (n - 1) + 1] = up[n * (n - 1) + 1] = y1;
-    u[n * n] = up[n * n] = y2;
+    u[raz] = up[raz] = x2;
+    u[raz * (raz - 1) + 1] = up[raz * (raz - 1) + 1] = y1;
+    u[raz * raz] = up[raz * raz] = y2;
 
     // Move data to device (accelerator)
 #pragma acc enter data create(u[0:n*n], up[0:n*n]) copyin(n, step1)
@@ -30,11 +34,11 @@ int main(int argc, char *argv[]) {
     {
         // Initialize boundary conditions
 #pragma acc loop independent
-        for (int i = 0; i < n; i++) {
-            u[i*n] = up[i*n] = x1 + i * step1;
+        for (int i = 0; i < raz; i++) {
+            u[i * raz] = up[i * raz] = x1 + i * step1;
             u[i] = up[i] = x1 + i * step1;
-            u[(n - 1) * n + i] = up[(n - 1) * n + i] = y1 + i * step1;
-            u[i * n + (n - 1)] = up[i * n + (n - 1)] = x2 + i * step1;
+            u[(raz - 1) * raz + i] = up[(raz - 1) * raz + i] = y1 + i * step1;
+            u[i * raz + (raz - 1)] = up[i * raz + (raz - 1)] = x2 + i * step1;
         }
     }
 
@@ -50,10 +54,10 @@ int main(int argc, char *argv[]) {
 #pragma acc kernels async(1)
             {
 #pragma acc loop independent collapse(2)
-                for (int i = 1; i < n - 1; i++) {
-                    for (int j = 1; j < n - 1; j++) {
-                        up[i * n + j] =
-                                0.25 * (u[(i + 1) * n + j] + u[(i - 1) * n + j] + u[i * n + j - 1] + u[i * n + j + 1]);
+                for (int i = 1; i < raz - 1; i++) {
+                    for (int j = 1; j < raz - 1; j++) {
+                        up[i * raz + j] =
+                                0.25 * (u[(i + 1) * raz + j] + u[(i - 1) * raz + j] + u[i * raz + j - 1] + u[i * raz + j + 1]);
                     }
                 }
             }
@@ -62,25 +66,25 @@ int main(int argc, char *argv[]) {
             // Calculate error and update u
 #pragma acc host_data use_device(u, up)
             {
-                cublasDaxpy(handle, n * n, &alpha, up, 1, u, 1);
-                cublasIdamax(handle, n * n, u, 1, &id);
+                cublasDaxpy(handle, raz * raz, &alpha, up, 1, u, 1);
+                cublasIdamax(handle, raz * raz, u, 1, &id);
             }
 #pragma acc update self(u[id-1:1])
 
 #pragma acc update self(u[id-1:1])
             error = fabs(u[id - 1]);
 #pragma acc host_data use_device(u, up)
-            cublasDcopy(handle, n * n, up, 1, u, 1);
+            cublasDcopy(handle, raz * raz, up, 1, u, 1);
 
         } else {
 #pragma acc data present(u[0:n*n], up[0:n*n])
 #pragma acc kernels async(1)
             {
 #pragma acc loop independent collapse(2)
-                for (int i = 1; i < n - 1; i++) {
-                    for (int j = 1; j < n - 1; j++) {
-                        up[i * n + j] =
-                                0.25 * (u[(i + 1) * n + j] + u[(i - 1) * n + j] + u[i * n + j - 1] + u[i * n + j + 1]);
+                for (int i = 1; i < raz - 1; i++) {
+                    for (int j = 1; j < raz - 1; j++) {
+                        up[i * raz + j] =
+                                0.25 * (u[(i + 1) * raz + j] + u[(i - 1) * raz + j] + u[i * raz + j - 1] + u[i * raz + j + 1]);
                     }
                 }
             }
@@ -95,8 +99,8 @@ int main(int argc, char *argv[]) {
 
     }
 
-printf("%d\n", itter);
-printf("%e", error);
-cublasDestroy(handle);
-return 0;
+    printf("%d\n", itter);
+    printf("%e", error);
+    cublasDestroy(handle);
+    return 0;
 }
