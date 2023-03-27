@@ -18,12 +18,12 @@ int main(int argc, char *argv[]) {
     const double alpha = -1;
     double step1 = 10.0 / (raz - 1);
 
-    double* arr_new = (double*)calloc(raz * raz, sizeof(double));
     double* arr_pred = (double*)calloc(raz * raz, sizeof(double));
+    double* arr_new = (double*)calloc(raz * raz, sizeof(double));
 
     arr_pred[0] = 10;
     arr_pred[raz] = 20;
-    arr_pred[raz * (raz - 1) + 1] = 20;
+    arr_pred[(raz - 1)*raz + 1] = 20;
     arr_pred[raz * raz] = 30;
 
     int num_iter = 0;
@@ -32,13 +32,12 @@ int main(int argc, char *argv[]) {
 #pragma acc enter data create(arr_new[0:raz*raz], arr_pred[0:raz*raz]) copyin(raz, step1)
 #pragma acc kernels
     {
-        // Initialize boundary conditions
 #pragma acc loop independent
         for (int j = 0; j < raz; j++) {
-            arr_pred[j * raz] = arr_new[j * raz] = 10 + j * step1;
-            arr_pred[j] = arr_new[j] = 10 + j * step1;
-            arr_pred[(raz - 1) * raz + j] = arr_new[(raz - 1) * raz + j] = 20 + j * step1;
-            arr_pred[j * raz + (raz - 1)] = arr_new[j * raz + (raz - 1)] = 20 + j * step1;
+            arr_pred[j]  = 10 + j * step1;
+            arr_pred[j * raz] = 10 + j * step1;
+            arr_pred[(raz - 1) * raz + j] = 20 + j * step1;
+            arr_pred[j * raz + (raz - 1)]= 20 + j * step1;
         }
     }
 
