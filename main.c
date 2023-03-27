@@ -11,9 +11,6 @@ int main(int argc, char *argv[]) {
     int raz = atoi(argv[3]); // размер сетки
     clock_t a=clock();
 
-    double *dop;
-    
-
     const double alpha = -1;
     double step1 = 10.0 / (raz - 1);
 
@@ -33,15 +30,15 @@ int main(int argc, char *argv[]) {
     {
 #pragma acc loop independent
         for (int j = 0; j < raz; j++) {
-            arr_pred[j] = 10 + j * step1;
-            arr_pred[j * raz] = 10 + j * step1;
-            arr_pred[(raz - 1) * raz + j] = 20 + j * step1;
-            arr_pred[j * raz + (raz - 1)] = 20 + j * step1;
+            arr_pred[j] = 10 + j * (10.0 / (raz - 1));
+            arr_pred[j * raz] = 10 + j * (10.0 / (raz - 1));
+            arr_pred[(raz - 1) * raz + j] = 20 + j * (10.0 / (raz - 1));
+            arr_pred[j * raz + (raz - 1)] = 20 + j * (10.0 / (raz - 1));
         }
     }
     cublasHandle_t handle;
     cublasCreate(&handle);
-
+    double *dop;
     while (max_num_iter > num_iter && max_toch < error) {
         num_iter++;
         // Every 100 iterations or the first iteration, calculate error
