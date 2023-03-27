@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     int num_iter = 0;
     double error = 1 + max_toch;
 
-#pragma acc enter data create(arr_pred[0:raz*raz], arr_new[0:raz*raz]) copyin(raz, step1)
+#pragma acc enter data create(arr_pred[0:raz*raz], arr_new[0:raz*raz]) copyin(raz, (10.0 / (raz - 1)))
 #pragma acc kernels
     {
 #pragma acc loop independent
