@@ -12,8 +12,7 @@ int main(int argc, char *argv[]) {
     clock_t a=clock();
 
     double *dop;
-    cublasHandle_t handle;
-    cublasCreate(&handle);
+    
 
     const double alpha = -1;
     double step1 = 10.0 / (raz - 1);
@@ -32,7 +31,6 @@ int main(int argc, char *argv[]) {
 #pragma acc enter data create(arr_pred[0:raz*raz], arr_new[0:raz*raz]) copyin(raz, step1)
 #pragma acc kernels
     {
-        // Initialize boundary conditions
 #pragma acc loop independent
         for (int j = 0; j < raz; j++) {
             arr_pred[j] = 10 + j * step1;
@@ -41,8 +39,9 @@ int main(int argc, char *argv[]) {
             arr_pred[j * raz + (raz - 1)] = 20 + j * step1;
         }
     }
+    cublasHandle_t handle;
+    cublasCreate(&handle);
 
-    // Perform iterations until convergence
     while (max_num_iter > num_iter && max_toch < error) {
         num_iter++;
         // Every 100 iterations or the first iteration, calculate error
