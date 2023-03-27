@@ -35,15 +35,15 @@ int main(int argc, char *argv[]) {
         // Initialize boundary conditions
 #pragma acc loop independent
         for (int j = 0; j < raz; j++) {
-            arr_pred[j * raz] = 10 + j * step1;
             arr_pred[j] = 10 + j * step1;
+            arr_pred[j * raz] = 10 + j * step1;
             arr_pred[(raz - 1) * raz + j] = 20 + j * step1;
             arr_pred[j * raz + (raz - 1)] = 20 + j * step1;
         }
     }
 
     // Perform iterations until convergence
-    while (num_iter < 1000000 && error > 1e-6) {
+    while (max_num_iter > num_iter && max_toch < error) {
         num_iter++;
         // Every 100 iterations or the first iteration, calculate error
         if (num_iter % 100 == 0 || num_iter == 1) {
