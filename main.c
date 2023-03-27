@@ -21,16 +21,17 @@ int main(int argc, char *argv[]) {
 
     double* arr_pred = (double*)calloc(raz * raz, sizeof(double));
     double* arr_new = (double*)calloc(raz * raz, sizeof(double));
-    
+
     double x1 = 10.0;
     double x2 = 20.0;
     double y1 = 20.0;
     double y2 = 30.0;
-    arr_new[0] = arr_pred[0] = x1;
-    arr_new[raz] = arr_pred[raz] = x2;
-    arr_new[raz * (raz - 1) + 1] = arr_pred[raz * (raz - 1) + 1] = y1;
-    arr_new[raz * raz] = arr_pred[raz * raz] = y2;
-
+    arr_pred[0] = 10;
+    arr_pred[raz] = 20;
+    arr_pred[raz * (raz - 1) + 1] = 20;
+    arr_pred[raz * raz] = 30;
+    
+    double error = 1 + max_toch;
     // Move data to device (accelerator)
 #pragma acc enter data create(arr_pred[0:raz*raz], arr_new[0:raz*raz]) copyin(raz, step1)
 #pragma acc kernels
@@ -46,7 +47,6 @@ int main(int argc, char *argv[]) {
     }
 
     int itter = 0;
-    double error = 1.0;
     // Perform iterations until convergence
     while (itter < 1000000 && error > 1e-6) {
         itter++;
