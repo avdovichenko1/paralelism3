@@ -3,10 +3,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define n 1024
-
-int main() {
+int main(int argc, char *argv[]) {
     // Allocate memory for variables
+    int n = atoi(argv[1]);
     double *buf;
     cublasHandle_t handle;
     cublasCreate(&handle);
