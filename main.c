@@ -5,7 +5,7 @@
 #include "cublas_v2.h" 
  
 #define M 1024 
-#define TOL 1e-6 
+#define TOL 0.000001
 #define ITER_MAX 1000000 
  
 int main() { 
