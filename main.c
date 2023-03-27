@@ -11,9 +11,6 @@ int main(int argc, char *argv[]) {
     int raz = atoi(argv[3]); // размер сетки
     clock_t a=clock();
 
-    const double alpha = -1;
-    double step1 = 10.0 / (raz - 1);
-
     double* arr_pred = (double*)calloc(raz * raz, sizeof(double));
     double* arr_new = (double*)calloc(raz * raz, sizeof(double));
 
@@ -39,38 +36,38 @@ int main(int argc, char *argv[]) {
     cublasHandle_t handle;
     cublasCreate(&handle);
     double *dop;
+    
     while (max_num_iter > num_iter && max_toch < error) {
         num_iter++;
-        // Every 100 iterations or the first iteration, calculate error
         if (num_iter % 100 == 0 || num_iter == 1) {
-            // Perform Jacobi iteration on device
 #pragma acc data present(arr_pred[0:raz*raz], arr_new[0:raz*raz])
 #pragma acc kernels async(1)
             {
 #pragma acc loop independent collapse(2)
                 for (int i = 1; i < raz - 1; i++) {
                     for (int j = 1; j < raz - 1; j++) {
-                        arr_pred[i * raz + j] =
-                                0.25 * (arr_new[(i + 1) * raz + j] + arr_new[(i - 1) * raz + j] + arr_new[i * raz + j - 1] + arr_new[i * raz + j + 1]);
+                        arr_pred[i * raz + j] =0.25 * (arr_new[(i + 1) * raz + j] + arr_new[(i - 1) * raz + j] + arr_new[i * raz + j - 1] + arr_new[i * raz + j + 1]);
                     }
                 }
             }
-            int id = 0;
+            int max_id = 0;
+            const double alpha = -1;
 #pragma acc wait
-            // Calculate error and update arr_new
 #pragma acc host_data use_device(arr_pred, arr_new)
             {
                 cublasDaxpy(handle, raz * raz, &alpha, arr_pred, 1, arr_new, 1);
-                cublasIdamax(handle, raz * raz, arr_new, 1, &id);
+                cublasIdamax(handle, raz * raz, arr_new, 1, &max_id);
             }
 #pragma acc update self(arr_new[id-1:1])
-
 #pragma acc update self(arr_new[id-1:1])
-            error = fabs(arr_new[id - 1]);
+            error = fabs(arr_new[max_id - 1]);
 #pragma acc host_data use_device(arr_pred, arr_new)
             cublasDcopy(handle, raz * raz, arr_pred, 1, arr_new, 1);
+#pragma acc wait(1)
+            printf("%d %e\n", num_iter, error);
 
-        } else {
+        } 
+        else {
 #pragma acc data present(arr_pred[0:raz*raz], arr_new[0:raz*raz])
 #pragma acc kernels async(1)
             {
@@ -86,10 +83,6 @@ int main(int argc, char *argv[]) {
         dop = arr_new;
         arr_new = arr_pred;
         arr_pred = dop;
-
-        if (num_iter % 100 == 0 || num_iter == 1)
-#pragma acc wait(1)
-            printf("%d %e\n", num_iter, error);
 
     }
 
