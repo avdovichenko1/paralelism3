@@ -2,13 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 
 int main(int argc, char *argv[]) {
-    // Allocate memory for variables
+    
     int max_num_iter = atoi(argv[1]); // количество итераций
     double max_toch = atof(argv[2]); // точность
     int raz = atoi(argv[3]); // размер сетки
+    clock_t a=clock();
     
     double *buf;
     cublasHandle_t handle;
