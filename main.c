@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     u[raz * raz] = up[raz * raz] = y2;
 
     // Move data to device (accelerator)
-#pragma acc enter data create(u[0:n*n], up[0:n*n]) copyin(n, step1)
+#pragma acc enter data create(u[0:raz*raz], up[0:raz*raz]) copyin(raz, step1)
 #pragma acc kernels
     {
         // Initialize boundary conditions
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
         // Every 100 iterations or the first iteration, calculate error
         if (itter % 100 == 0 || itter == 1) {
             // Perform Jacobi iteration on device
-#pragma acc data present(u[0:n*n], up[0:n*n])
+#pragma acc data present(u[0:raz*raz], up[0:raz*raz])
 #pragma acc kernels async(1)
             {
 #pragma acc loop independent collapse(2)
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
             cublasDcopy(handle, raz * raz, up, 1, u, 1);
 
         } else {
-#pragma acc data present(u[0:n*n], up[0:n*n])
+#pragma acc data present(u[0:raz*raz], up[0:raz*raz])
 #pragma acc kernels async(1)
             {
 #pragma acc loop independent collapse(2)
