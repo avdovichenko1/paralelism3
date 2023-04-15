@@ -1,114 +1,101 @@
-#include <cublas_v2.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-#define n 15
-
-int main() {
-    // Allocate memory for variables
-    double *buf;
-    cublasHandle_t handle;
-    cublasCreate(&handle);
-
-    const double alpha = -1;
-    double step1 = 10.0 / (n - 1);
-
-    double* u = (double*)calloc(n*n, sizeof(double));
-    double* up = (double*)calloc(n*n, sizeof(double));
-    double x1 = 10.0;
-    double x2 = 20.0;
-    double y1 = 20.0;
-    double y2 = 30.0;
-    u[0] = up[0] = x1;
-    u[n] = up[n] = x2;
-    u[n * (n - 1) + 1] = up[n * (n - 1) + 1] = y1;
-    u[n * n] = up[n * n] = y2;
-
-    // Move data to device (accelerator)
-#pragma acc enter data create(u[0:n*n], up[0:n*n]) copyin(n, step1)
-#pragma acc kernels
-    {
-        // Initialize boundary conditions
-#pragma acc loop independent
-        for (int i = 0; i < n; i++) {
-            u[i*n] = up[i*n] = x1 + i * step1;
-            u[i] = up[i] = x1 + i * step1;
-            u[(n - 1) * n + i] = up[(n - 1) * n + i] = y1 + i * step1;
-            u[i * n + (n - 1)] = up[i * n + (n - 1)] = x2 + i * step1;
-        }
-    }
-
-    int itter = 0;
-    double error = 1.0;
-    // Perform iterations until convergence
-    while (itter < 1000000 && error > 1e-6) {
-        itter++;
-        // Every 100 iterations or the first iteration, calculate error
-        if (itter % 100 == 0 || itter == 1) {
-            // Perform Jacobi iteration on device
-#pragma acc data present(u[0:n*n], up[0:n*n])
-#pragma acc kernels async(1)
-            {
-#pragma acc loop independent collapse(2)
-                for (int i = 1; i < n - 1; i++) {
-                    for (int j = 1; j < n - 1; j++) {
-                        up[i * n + j] =
-                                0.25 * (u[(i + 1) * n + j] + u[(i - 1) * n + j] + u[i * n + j - 1] + u[i * n + j + 1]);
-                    }
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <math.h> 
+#include <time.h> 
+ 
+int main(int argc, char* argv[]) { 
+     
+    double time_spent1 = 0.0; 
+ 
+    clock_t begin1 = clock();  
+     
+    // Check if enough arguments are provided 
+    if (argc < 4) { 
+        printf("Usage: ./program_name Matrix accuracy iterations\n"); 
+        return 1; 
+    } 
+ 
+    // Convert command line arguments to integers 
+    int Matrix = atoi(argv[1]); 
+    double accuracy = atof(argv[2]); 
+    int iterations = atoi(argv[3]); 
+     
+    // Allocate 2D arrays on host memory 
+    double* arr = (double*)malloc(Matrix * Matrix * sizeof(double)); 
+    double* array_new = (double*)malloc(Matrix * Matrix * sizeof(double)); 
+    // Initialize arrays to zero 
+    for (int i = 0; i < Matrix * Matrix; i++) { 
+        arr[i] = 0; 
+        array_new[i] = 0; 
+    } 
+    // Set boundary conditions 
+    arr[0 * Matrix + 0] = 10; 
+    arr[0 * Matrix + Matrix - 1] = 20; 
+    arr[(Matrix - 1) * Matrix + 0] = 30; 
+    arr[(Matrix - 1) * Matrix + Matrix - 1] = 20; 
+     
+    for (int j = 1; j < Matrix; j++) { 
+            arr[0 * Matrix + j] = (arr[0 * Matrix + Matrix - 1] - arr[0 * Matrix + 0]) / (Matrix - 1) + arr[0 * Matrix + j - 1];   //top 
+            arr[(Matrix - 1) * Matrix + j] = (arr[(Matrix - 1) * Matrix + Matrix - 1] - arr[(Matrix - 1) * Matrix + 0]) / (Matrix - 1) + arr[(Matrix - 1) * Matrix + j - 1]; //bottom 
+            arr[j * Matrix + 0] = (arr[(Matrix - 1) * Matrix + 0] - arr[0 * Matrix + 0]) / (Matrix - 1) + arr[(j - 1) * Matrix + 0]; //left 
+            arr[j * Matrix + Matrix - 1] = (arr[(Matrix - 1) * Matrix + Matrix - 1] - arr[0 * Matrix + Matrix - 1]) / (Matrix - 1) + arr[(j - 1) * Matrix + Matrix - 1]; //right 
+        } 
+    // Main loop 
+    double err = accuracy + 1; 
+    int iter = 0; 
+ 
+#pragma acc data copy(arr[0:Matrix*Matrix], array_new[0:Matrix*Matrix]) 
+    { 
+        while (err > accuracy  && iter < iterations) { 
+            // Compute new values 
+            err = 0; 
+#pragma acc parallel reduction(max:err) 
+{ 
+    #pragma acc loop independent 
+            for (int j = 1; j < Matrix - 1; j++) { 
+#pragma acc loop independent 
+                for (int i = 1; i < Matrix - 1; i++) { 
+                    int index = j * Matrix + i; 
+                    array_new[index] = 0.25 * (arr[index + Matrix] + arr[index - Matrix] + 
+                        arr[index - 1] + arr[index + 1]); 
+                    err = fmax(err, fabs(array_new[index] - arr[index])); 
+                } 
+            } 
+} 
+            // Update values 
+#pragma acc kernels loop independent 
+            for (int j = 1; j < Matrix - 1; j++) { 
+#pragma acc loop 
+                for (int i = 1; i < Matrix - 1; i++) { 
+                    int index = j * Matrix + i; 
+                    arr[index] = array_new[index]; 
+                } 
+            } 
+ 
+            iter++; 
+        } 
+    } 
+ 
+    printf("Final result: %d, %0.6lf\n", iter, err); 
+    
+    
+     //вывод сетки размером 15*15
+        if (Matrix==15){
+                for (int i = 0; i <Matrix; i++) {
+                    for (int j = 0; j < Matrix; j++) {
+                        printf("%0.2lf ", arr_new[i * Matrix + j]);
+                    }   
+                printf("\n");
                 }
             }
-            int id = 0;
-#pragma acc wait
-            // Calculate error and update u
-#pragma acc host_data use_device(u, up)
-            {
-                cublasDaxpy(handle, n * n, &alpha, up, 1, u, 1);
-                cublasIdamax(handle, n * n, u, 1, &id);
-            }
-#pragma acc update self(u[id-1:1])
-
-#pragma acc update self(u[id-1:1])
-            error = fabs(u[id - 1]);
-#pragma acc host_data use_device(u, up)
-            cublasDcopy(handle, n * n, up, 1, u, 1);
-
-        } else {
-#pragma acc data present(u[0:n*n], up[0:n*n])
-#pragma acc kernels async(1)
-            {
-#pragma acc loop independent collapse(2)
-                for (int i = 1; i < n - 1; i++) {
-                    for (int j = 1; j < n - 1; j++) {
-                        up[i * n + j] =
-                                0.25 * (u[(i + 1) * n + j] + u[(i - 1) * n + j] + u[i * n + j - 1] + u[i * n + j + 1]);
-                    }
-                }
-            }
-        }
-        buf = u;
-        u = up;
-        up = buf;
-        
-        if (n==15){
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    printf("%0.2lf ", up[i * n + j]);
-                }   
-            printf("\n");
-            }
-        }
-
-        if (itter % 100 == 0 || itter == 1)
-#pragma acc wait(1)
-            printf("%d %e\n", itter, error);
-        
-        
-
-    }
-
-printf("%d\n", itter);
-printf("%e", error);
-cublasDestroy(handle);
-return 0;
+    // Free memory 
+    free(arr); 
+    free(array_new); 
+ 
+     
+    clock_t end1 = clock(); 
+    time_spent1 += (double)(end1 - begin1) / CLOCKS_PER_SEC; 
+    printf("%f\n", time_spent1); 
+     
+    return 0; 
 }
