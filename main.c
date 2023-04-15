@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
         if (Matrix==15){
                 for (int i = 0; i <Matrix; i++) {
                     for (int j = 0; j < Matrix; j++) {
-                        printf("%0.2lf ", array_new[i * Matrix + j]);
+                        printf("%0.2lf ", arr[i * Matrix + j]);
                     }   
                 printf("\n");
                 }
