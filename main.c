@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define n 1024
+#define n 15
 
 int main() {
     // Allocate memory for variables
@@ -89,10 +89,22 @@ int main() {
         buf = u;
         u = up;
         up = buf;
+        
+        printf("\n%d grid:\n", num_iter);
+        if (n==15){
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    printf("%0.2lf ", up[i * n + j]);
+                }   
+            printf("\n");
+            }
+        }
 
         if (itter % 100 == 0 || itter == 1)
 #pragma acc wait(1)
             printf("%d %e\n", itter, error);
+        
+        
 
     }
 
